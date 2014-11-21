@@ -18,6 +18,8 @@ import alpv_ws1415.ub1.webradio.protobuf.RadioPaketProtos.*;
  */
 public class ClientHandlerUDP extends ClientHandler
 {
+	private final int maxDataSize = 60000;
+	
 	private DatagramSocket socket;
 	private SocketAddress clientAddress;
 	
@@ -90,6 +92,9 @@ public class ClientHandlerUDP extends ClientHandler
 		{
 			if(socket == null)
 				Log.notice("Socket ist null... (run)");
+			
+			// Aufteilen wenn zu groﬂ
+			for(int i=0; i<data.length; i += maxDataSize)
 			try
 			{
 				RadioPaket.Builder paket = RadioPaket.newBuilder()
@@ -118,7 +123,7 @@ public class ClientHandlerUDP extends ClientHandler
 				
 				if(this.data != null)
 				{
-					paket.setMusicData(ByteString.copyFrom(data));
+					paket.setMusicData(ByteString.copyFrom(data, i, Math.min(maxDataSize, data.length-i)));
 				}
 				
 				synchronized(messagesLock)

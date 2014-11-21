@@ -134,6 +134,7 @@ public class RadioClientTCP extends RadioClient
 					
 					if(paket.hasMusicData())
 					{
+						log("Musik!");
 						data = paket.getMusicData().toByteArray();
 						
 						if(data == null)
@@ -143,7 +144,7 @@ public class RadioClientTCP extends RadioClient
 						
 						if(data != null && player != null)
 						{
-							//player.writeBytes(data);
+							player.writeBytes(data);
 						}
 					}
 				}

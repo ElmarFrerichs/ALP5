@@ -12,7 +12,7 @@ import alpv_ws1415.ub1.webradio.ui.Log;
  */
 public class ConnectionServerUDP extends ConnectionServer
 {
-	private ServerSocket socket;
+	private DatagramSocket socket;
 	
 	public ConnectionServerUDP(int port, Player player) throws IOException, SocketException
 	{
@@ -20,7 +20,7 @@ public class ConnectionServerUDP extends ConnectionServer
 		
 		Log.log("Connection setup on port "+port+"...");
 		
-		socket = new ServerSocket(port);
+		socket = new DatagramSocket(port);
 		socket.setSoTimeout(2000);
 		
 		Log.log("Connection established...");
@@ -49,20 +49,17 @@ public class ConnectionServerUDP extends ConnectionServer
 			// Warte auf neue Verbindungen
 			try
 			{
-				Log.log("ConnectionServer ready and waiting...");
-				Socket client = socket.accept();
+				byte[] data = new byte[1024];
+				DatagramPacket dp = new DatagramPacket(data, data.length);
+				Log.log("ConnectionServer ready and waiting... (Port "+socket.getLocalPort()+")");
+				socket.receive(dp);
 				Log.log("New client connecting");
 				
 				// Erzeuge neuen ClientHandler
 				DatagramSocket dsocket = new DatagramSocket(0);
-				ClientHandler ch = new ClientHandlerUDP(dsocket, client.getRemoteSocketAddress());
+				ClientHandler ch = new ClientHandlerUDP(dsocket, dp.getSocketAddress());
 				
-				// Port mitteilen
-				BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-				bw.write(dsocket.getLocalPort()+"\n");
-				bw.close();
-				
-				Log.notice("Port: "+dsocket.getLocalPort());
+				Log.log("Port: "+dp.getPort());
 				
 				player.addClientHandler(ch);
 			}
@@ -84,15 +81,8 @@ public class ConnectionServerUDP extends ConnectionServer
 			}
 		}
 		
-		try
-		{
-			// Aufräumen
-			socket.close();
-		}
-		catch(IOException e)
-		{
-			Log.error("IOException on server shutdown");
-		}
+		// Aufräumen
+		socket.close();
 		
 		Log.log("ConnectionsServer stopped");
 	}

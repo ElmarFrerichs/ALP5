@@ -31,9 +31,9 @@ public class Player
 	
 	// Konstanten
 	// zu sendender Puffer in Millisekunden
-	private final int sendBufferMillis = 400;
+	private final int sendBufferMillis = 2000;
 	// Zusätzliche Größe für den Buffer
-	private final int bufferOverhang = 300;
+	private final int bufferOverhang = (int) (sendBufferMillis/10);
 	
 	/**
 	 * Konstruktor

@@ -67,14 +67,13 @@ public class RadioClientUDP extends RadioClient
 	}
 	public void connect(InetAddress serverAddress, int port) throws IOException
 	{
-		Socket tcpSocket = new Socket(serverAddress, port);
-		BufferedReader br = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
-		int udpPort = Integer.parseInt(br.readLine());
-		tcpSocket.close();
+		log("Connect Address "+serverAddress.getHostName()+" Port "+port);
+		clientSocket = new DatagramSocket(0);
+		byte[] data = "Hello".getBytes();
+		DatagramPacket dp = new DatagramPacket(data, data.length, serverAddress, port);
+		clientSocket.send(dp);
 		
-		log("Port: "+udpPort);
-		
-		this.serverAddress = new InetSocketAddress(serverAddress, udpPort);
+		this.serverAddress = new InetSocketAddress(serverAddress, port);
 	}
 	
 	/**
@@ -113,6 +112,7 @@ public class RadioClientUDP extends RadioClient
 				{
 					DatagramPacket dp = new DatagramPacket(data, data.length);
 					clientSocket.receive(dp);
+					log("Paket!");
 					ByteArrayInputStream str = new ByteArrayInputStream(data);
 					
 					RadioPaket paket = RadioPaket.parseDelimitedFrom(str);
@@ -144,6 +144,7 @@ public class RadioClientUDP extends RadioClient
 					
 					if(paket.hasMusicData())
 					{
+						log("Musik!");
 						data = paket.getMusicData().toByteArray();
 						
 						if(data == null)
@@ -153,7 +154,7 @@ public class RadioClientUDP extends RadioClient
 						
 						if(data != null && player != null)
 						{
-							//player.writeBytes(data);
+							player.writeBytes(data);
 						}
 					}
 				}
@@ -233,7 +234,7 @@ public class RadioClientUDP extends RadioClient
 	
 	private void log(String text)
 	{
-		if(ui == null)
+		if(ui != null)
 		{
 			ui.log(text);
 		}
