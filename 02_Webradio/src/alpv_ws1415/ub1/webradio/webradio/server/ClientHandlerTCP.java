@@ -19,6 +19,7 @@ import alpv_ws1415.ub1.webradio.protobuf.RadioPaketProtos.*;
 public class ClientHandlerTCP extends ClientHandler
 {
 	private Socket socket;
+	private OutputStream stream;
 	private ClientReciever rc;
 	
 	private int messageId = 0;
@@ -49,6 +50,13 @@ public class ClientHandlerTCP extends ClientHandler
 	public void close()
 	{
 		rc.close();
+		
+		try
+		{
+			stream.close();
+		}
+		catch(IOException e)
+		{ }
 		
 		try
 		{

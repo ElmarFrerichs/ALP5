@@ -10,8 +10,6 @@ import java.util.LinkedList;
  */
 public abstract class ClientHandler
 {
-	protected OutputStream stream;
-	
 	// Rückreferenz auf Player, null = kein Player
 	protected Player player = null;
 	
@@ -61,13 +59,6 @@ public abstract class ClientHandler
 	
 	public void close()
 	{
-		try
-		{
-			stream.close();
-		}
-		catch(IOException e)
-		{ }
-		
 		// Beim Player abmelden
 		if(player != null)
 		{
