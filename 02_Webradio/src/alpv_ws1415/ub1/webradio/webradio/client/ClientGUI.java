@@ -21,6 +21,7 @@ public class ClientGUI extends JFrame implements ClientUI
 	private JButton stopButton = new JButton();
 	private JButton connectButton = new JButton();
 	private JLabel nowPlaying = new JLabel();
+	private JScrollPane chatAreaScroll = new JScrollPane();
 	private JTextArea chatArea = new JTextArea("");
 	private JTextField chatInput = new JTextField();
 	private JButton chatSendButton = new JButton();
@@ -104,10 +105,14 @@ public class ClientGUI extends JFrame implements ClientUI
 		nowPlaying.setFont(new Font("MS Sans Serif", Font.PLAIN, 13));
 		cp.add(nowPlaying);
 		
-		chatArea.setBounds(8, 56, 529, 233);
-		chatArea.setText("(Strings)");
+		chatAreaScroll.setBounds(8, 56, 529, 233);
+		chatAreaScroll.setViewportView(chatArea);
+		cp.add(chatAreaScroll);
+		
+		//chatArea.setBounds(8, 56, 529, 233);
+		chatArea.setText("");
 		chatArea.setLineWrap(true);
-		cp.add(chatArea);
+		//cp.add(chatArea);
 		
 		chatInput.setBounds(8, 296, 481, 24);
 		chatInput.setText("");
@@ -133,7 +138,7 @@ public class ClientGUI extends JFrame implements ClientUI
 		{
 			username = JOptionPane.showInputDialog(cp, "Bitte gib deinen Username ein", "Username", JOptionPane.QUESTION_MESSAGE);
 		}
-		while(username != null && !username.isEmpty());
+		while(username == null || username.isEmpty());
 	}
 	
 	public void playButton_ActionPerformed(ActionEvent evt)
@@ -149,7 +154,7 @@ public class ClientGUI extends JFrame implements ClientUI
 			{
 				context.connect(address);
 			}
-			catch(IOException e)
+			catch(Exception e)
 			{
 				addTextToChatArea("Netzwerkfehler!");
 			}
@@ -177,6 +182,7 @@ public class ClientGUI extends JFrame implements ClientUI
 		{
 			addTextToChatArea("Nachricht nicht gesendet: Netzwerkfehler!");
 		}
+		chatInput.setText("");
 	}
 	
 	// ------------------
@@ -184,6 +190,11 @@ public class ClientGUI extends JFrame implements ClientUI
 	public void pushChatMessage(String message)
 	{
 		addTextToChatArea(message);
+	}
+	
+	public void log(String text)
+	{
+		addTextToChatArea(text);
 	}
 	
 	public String getUserName()
@@ -196,9 +207,16 @@ public class ClientGUI extends JFrame implements ClientUI
 		this.context = context;
 	}
 	
+	public void setSong(String text)
+	{
+		nowPlaying.setText(text);
+	}
+	
 	public void close()
 	{
 		context.close();
+
+		System.exit(0);
 	}
 	
 	// ------------------
@@ -212,19 +230,25 @@ public class ClientGUI extends JFrame implements ClientUI
 	{
 		String url = JOptionPane.showInputDialog(cp, "Bitte Server-Addresse eingeben (ohne Port)", "Server-Addresse", JOptionPane.QUESTION_MESSAGE);
 		
+		if(url.equals(""))
+			url = "localhost";
+		
 		int port = 0;
 		do
 		{
 			try
 			{
-				port = Integer.parseInt(JOptionPane.showInputDialog(cp, "Bitte Server-Port eingeben", "Server-Port", JOptionPane.QUESTION_MESSAGE));
+				String portstring = JOptionPane.showInputDialog(cp, "Bitte Server-Port eingeben", "Server-Port", JOptionPane.QUESTION_MESSAGE);
+				if(portstring.equals(""))
+					portstring = "15101";
+				port = Integer.parseInt(portstring);
 			}
 			catch(NumberFormatException e)
 			{
 				port = 0;
 			}
 		}
-		while(port > 0);
+		while(port <= 0);
 		
 		this.address = new InetSocketAddress(url, port);
 	}

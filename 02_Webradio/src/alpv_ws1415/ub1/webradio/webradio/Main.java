@@ -85,10 +85,11 @@ public class Main
 						gui.setContext(client);
 						
 						Thread rc = new Thread(client);
+						new Thread(gui).start();
 						rc.start();
 						Log.log("Main: Starting Thread RadioClient ("+rc.getName()+")");
 						
-						client.connect(new InetSocketAddress(host, port));
+						//client.connect(new InetSocketAddress(host, port));
 						
 						rc.join();
 						

@@ -18,7 +18,7 @@ public abstract class ClientHandler
 	protected Song changeSong = null;
 	protected Object changeSongLock = new Object();
 	
-	protected LinkedList<TextMessage> messages;
+	protected LinkedList<TextMessage> messages = new LinkedList<>();
 	protected Object messagesLock = new Object();
 	
 	/**

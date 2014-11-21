@@ -2,6 +2,7 @@ package alpv_ws1415.ub1.webradio.webradio.server;
 
 import java.util.*;
 import java.io.*;
+
 import javax.sound.sampled.*;
 
 import alpv_ws1415.ub1.webradio.ui.Log;
@@ -67,6 +68,11 @@ public class Player
 		}
 		
 		clientHandler.setPlayer(this);
+		
+		synchronized(nowPlayingLock)
+		{
+			clientHandler.changeSong(nowPlaying);	
+		}
 		return true;
 	}
 	
@@ -109,6 +115,7 @@ public class Player
 	{
 		synchronized(clientHandlersLock)
 		{
+			Log.notice("Sending message to "+clientHandlers.size()+" clients: "+message.getText());
 			for(ClientHandler handler: clientHandlers)
 			{
 				handler.sendTextMessage(message);
@@ -122,7 +129,6 @@ public class Player
 	@SuppressWarnings("unchecked")
 	public void close()
 	{
-		Log.log("Player closing...");
 		// Flag auf true setzten
 		stopPlayer = true;
 		
@@ -241,9 +247,7 @@ public class Player
 					// Puffer an Bitrate anpassen
 					bufferSize = (int) (sendBufferMillis * 2 / 1000 * audioFormat.getSampleRate() * audioFormat.getSampleSizeInBits() / 8) + bufferOverhang;
 					
-					Log.notice("Buffer size: "+bufferSize);
-					
-					nextSong = false;
+					Log.log("Buffer size: "+bufferSize);
 				}
 				
 				// Zeit messen, um den Stream timen zu können
@@ -255,7 +259,7 @@ public class Player
 				
 				try
 				{
-					Log.notice("read(buffer, 0, "+bufferSize+"), b.len = "+buffer.length);
+					Log.log("read(buffer, 0, "+bufferSize+"), b.len = "+buffer.length);
 					numRead = file.read(buffer, 0, bufferSize);
 					
 					if(numRead < 0)
@@ -277,19 +281,32 @@ public class Player
 				{
 					for (Iterator<ClientHandler> it=clientHandlers.listIterator(0); it.hasNext();)
 					{
-						it.next().sendData(buffer);
+						ClientHandler clientHandler = it.next();
+						
+						if(nextSong)
+						{
+							synchronized(nowPlayingLock)
+							{
+								clientHandler.changeSong(nowPlaying);
+							}
+						}
+						
+						clientHandler.sendData(buffer);
 					}
 				}
 				
+				nextSong = false;
+				
 				long endTime = System.currentTimeMillis();
-				Log.notice("Schlafen: "+(targetTime - endTime));
+				Log.log("Schlafen: "+(targetTime - endTime));
 				
 				endTime = System.currentTimeMillis();
 				
 				// Eine Runde ausschlafen
 				try
 				{
-					Thread.sleep(targetTime - endTime);
+					long sleeptime = targetTime - endTime;
+					Thread.sleep((sleeptime < 0 ? 0 : sleeptime));
 				}
 				catch(InterruptedException e)
 				{ }

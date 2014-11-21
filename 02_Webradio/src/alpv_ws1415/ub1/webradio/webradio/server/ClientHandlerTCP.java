@@ -31,8 +31,9 @@ public class ClientHandlerTCP extends ClientHandler
 	public ClientHandlerTCP(Socket socket) throws IOException
 	{
 		stream = socket.getOutputStream();
+		this.socket = socket;
 		rc = new ClientReciever(this);
-		new Thread(rc);
+		new Thread(rc).start();
 	}
 	
 	/**
@@ -125,7 +126,7 @@ public class ClientHandlerTCP extends ClientHandler
 					}
 				}
 				
-				paket.build().writeTo(stream);
+				paket.build().writeDelimitedTo(stream);
 			}
 			catch(IOException e)
 			{
@@ -152,11 +153,12 @@ public class ClientHandlerTCP extends ClientHandler
 		
 		public void run()
 		{
+			Log.notice("Neuer ClientReciever!");
 			try
 			{
 				while(!stop)
 				{
-					RadioAntwortPaket paket = RadioAntwortPaket.parseFrom(socket.getInputStream());
+					RadioAntwortPaket paket = RadioAntwortPaket.parseDelimitedFrom(socket.getInputStream());
 					
 					TextMessage message = new TextMessage(paket.getMessage().getUser(), paket.getMessage().getMessage());
 					
