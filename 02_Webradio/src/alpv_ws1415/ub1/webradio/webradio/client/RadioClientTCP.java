@@ -6,7 +6,6 @@ import java.net.*;
 import javax.sound.sampled.*;
 
 import alpv_ws1415.ub1.webradio.audioplayer.*;
-import alpv_ws1415.ub1.webradio.ui.ClientUI;
 import alpv_ws1415.ub1.webradio.ui.Log;
 import alpv_ws1415.ub1.webradio.webradio.server.TextMessage;
 import alpv_ws1415.ub1.webradio.protobuf.RadioPaketProtos.*;
