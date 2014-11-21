@@ -9,15 +9,15 @@ message RadioPaket
 	
 	message AudioFormat
 	{
-		optional string encoding = 1;
-		optional float sampleRate = 2;
-		optional int32 sampleSizeInBits = 3;
-		optional int32 channels = 4;
-		optional int32 frameSize = 5;
-		optional float frameRate = 6;
-		optional bool bigEndian = 7;
-		optional string title = 8;
-		optional double duration = 9;
+		required string encoding = 1;
+		required float sampleRate = 2;
+		required int32 sampleSizeInBits = 3;
+		required int32 channels = 4;
+		required int32 frameSize = 5;
+		required float frameRate = 6;
+		required bool bigEndian = 7;
+		required string title = 8;
+		required double duration = 9;
 	}
 	
 	message TextMessage
