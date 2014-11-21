@@ -1,0 +1,51 @@
+package alpv_ws1415.ub1.webradio.protobuf;
+
+option java_package = "alpv_ws1415.ub1.webradio.protobuf";
+option java_outer_classname = "RadioPaketProtos";
+
+message RadioPaket
+{
+	required uint32 id = 1;
+	
+	message AudioFormat
+	{
+		optional string encoding = 1;
+		optional float sampleRate = 2;
+		optional int32 sampleSizeInBits = 3;
+		optional int32 channels = 4;
+		optional int32 frameSize = 5;
+		optional float frameRate = 6;
+		optional bool bigEndian = 7;
+		optional string title = 8;
+		optional double duration = 9;
+	}
+	
+	message TextMessage
+	{
+		optional string user = 1;
+		optional string message = 2;
+	}
+	
+	// AudioFormat
+	optional AudioFormat format = 2;
+	
+	// Music data
+	optional bytes musicData = 10;
+	
+	// Chat message
+	repeated TextMessage message = 11;
+}
+
+message RadioAntwortPaket
+{
+	required uint32 id = 1;
+	
+	message TextMessage
+	{
+		optional string user = 1;
+		optional string message = 2;
+	}
+	
+	// Chat message
+	optional TextMessage message = 11;
+}
