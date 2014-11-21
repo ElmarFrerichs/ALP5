@@ -10,6 +10,18 @@ public abstract class RadioClient implements Client, Runnable
 {
 	// Flags
 	protected boolean stop = false;
+
+	protected ClientGUI ui;
+	
+	public RadioClient(ClientGUI gui)
+	{
+		this.ui = gui;
+	}
+	
+	public RadioClient()
+	{
+		this.ui = null;
+	}
 	
 	/**
 	 * Close socket
@@ -24,4 +36,6 @@ public abstract class RadioClient implements Client, Runnable
 	
 	protected abstract void closeSocket();
 	public abstract boolean isClosed();
+	
+	
 }

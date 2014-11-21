@@ -1,6 +1,7 @@
 package alpv_ws1415.ub1.webradio.webradio;
 
-import java.net.*;
+import java.io.IOException;
+import java.net.InetAddress;
 
 import alpv_ws1415.ub1.webradio.communication.*;
 import alpv_ws1415.ub1.webradio.ui.Log;
@@ -9,9 +10,11 @@ import alpv_ws1415.ub1.webradio.webradio.client.*;
 
 public class Main
 {
-	private static final String	USAGE	= String.format("usage: java -jar UB%%X_%%NAMEN [-options] server tcp|udp|mc PORT%n" +
+	private static final String	USAGE	= String.format("usage: java -jar webradio.jar server tcp|udp|mc PORT%n" +
+														"       java -jar webradio.jar --gui server tcp|udp|mc%n" +
 														"         (to start a server)%n" +
-														"or:    java -jar UB%%X_%%NAMEN [-options] client tcp|udp|mc SERVERIPADDRESS SERVERPORT USERNAME%n" +
+														"       java -jar webradio.jar client tcp|udp|mc SERVERIPADDRESS SERVERPORT USERNAME%n" +
+														"       java -jar webradio.jar --gui client tcp|udp|mc%n" +
 														"         (to start a client)");
 	
 	/**
@@ -20,22 +23,25 @@ public class Main
 	 * 
 	 * @param args
 	 */
-	public static void main(String[] args) {
-	
-		try {
+	public static void main(String[] args)
+	{
+		try
+		{
 			boolean useGUI = false;
 			int i = -1;
 
 			// Parse options. Add additional options here if you have to. Do not
 			// forget to mention their usage in the help-string!
-			while(args[++i].startsWith("-")) {
-				if(args[i].toLowerCase().equals("-help")) {
-					System.out.println(USAGE + String.format("%n%nwhere options include:"));
-					System.out.println("  -help      Show this text.");
-					System.out.println("  -gui       Show a graphical user interface.");
+			while(args[++i].startsWith("-"))
+			{
+				if(args[i].toLowerCase().equals("--help")
+					|| args[i].toLowerCase().equals("-h"))
+				{
+					System.out.println(USAGE);
 					System.exit(0);
 				}
-				else if(args[i].toLowerCase().equals("-gui")) {
+				else if(args[i].toLowerCase().equals("--gui"))
+				{
 					useGUI = true;
 				}
 			}
@@ -71,33 +77,37 @@ public class Main
 			}
 			else if(mode.toLowerCase().equals("client"))
 			{
-				String host = args[i++];
-				int port = Integer.parseInt(args[i++]);
-				String username = args[i++];
-				
 				// Start client
 				if(connectionType.toLowerCase().equals("tcp"))
 				{
-					try
+					if(useGUI)
 					{
 						ClientGUI gui = new ClientGUI();
 						RadioClientTCP client = new RadioClientTCP(gui);
 						gui.setContext(client);
 						
-						Thread rc = new Thread(client);
+						Thread mainThread = new Thread(client);
 						new Thread(gui).start();
-						rc.start();
-						Log.log("Main: Starting Thread RadioClient ("+rc.getName()+")");
+						mainThread.start();
+						Log.log("Main: Starting Thread RadioClient ("+mainThread.getName()+")");
 						
-						//client.connect(new InetSocketAddress(host, port));
-						
-						rc.join();
-						
-						Log.notice("Main: shuting down");
+						// Schlieﬂen, wenn Thread beendet
+						mainThread.join();
 					}
-					catch(Exception e)
+					else
 					{
-						e.printStackTrace();
+						String host = args[i++];
+						int port = Integer.parseInt(args[i++]);
+						// String username = args[i++];
+						
+						RadioClient client = new RadioClientTCP(InetAddress.getByName(host), port);
+						
+						Thread mainThread = new Thread(client);
+						mainThread.start();
+						Log.log("Main: Starting Thread RadioClient ("+mainThread.getName()+")");
+						
+						// Schlieﬂen, wenn Thread beendet
+						mainThread.join();
 					}
 				}
 				else
@@ -105,15 +115,28 @@ public class Main
 			}
 			else
 				throw new IllegalArgumentException("Illegal program mode");
+			
+			Log.notice("Main: shuting down");
 		}
-		catch(ArrayIndexOutOfBoundsException e) {
+		catch(ArrayIndexOutOfBoundsException e)
+		{
 			System.err.println(USAGE);
 		}
-		catch(NumberFormatException e) {
+		catch(NumberFormatException e)
+		{
 			System.err.println(USAGE);
 		}
-		catch(IllegalArgumentException e) {
+		catch(IllegalArgumentException e)
+		{
 			System.err.println(USAGE);
+		}
+		catch(IOException e)
+		{
+			System.err.println(USAGE);
+		}
+		catch(InterruptedException e)
+		{
+			Log.error("Interrupted, shuting down");
 		}
 	}
 }

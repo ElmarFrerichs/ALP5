@@ -18,8 +18,6 @@ public class RadioClientTCP extends RadioClient
 	// Private data
 	private Socket clientSocket = null;
 	
-	private ClientGUI ui;
-	
 	private int messageId = 0;
 	private int messageId() { return messageId++; }
 	
@@ -29,9 +27,9 @@ public class RadioClientTCP extends RadioClient
 	/**
 	 * Constructor
 	 */
-	public RadioClientTCP(ClientGUI ui)
+	public RadioClientTCP(ClientGUI gui)
 	{
-		this.ui = ui;
+		super(gui);
 	}
 	
 	/**
@@ -39,9 +37,9 @@ public class RadioClientTCP extends RadioClient
 	 * 
 	 * @param socketAddress	directly connect to address (like calling connect() afterwards)
 	 */
-	public RadioClientTCP(ClientGUI ui, InetSocketAddress socketAddress) throws IOException
+	public RadioClientTCP(InetSocketAddress socketAddress) throws IOException
 	{
-		this(ui);
+		super();
 		this.connect(socketAddress);
 	}
 	
@@ -51,9 +49,9 @@ public class RadioClientTCP extends RadioClient
 	 * @param address	directly connect to address (like calling connect() afterwards)
 	 * @param port		specify which port to use
 	 */
-	public RadioClientTCP(ClientGUI ui, InetAddress address, int port) throws IOException
+	public RadioClientTCP(InetAddress address, int port) throws IOException
 	{
-		this(ui);
+		super();
 		this.connect(address, port);
 	}
 	
@@ -64,25 +62,11 @@ public class RadioClientTCP extends RadioClient
 	 */
 	public void connect(InetSocketAddress serverAddress) throws IOException
 	{
-		try
-		{
-			clientSocket = new Socket(serverAddress.getAddress(), serverAddress.getPort());
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		clientSocket = new Socket(serverAddress.getAddress(), serverAddress.getPort());
 	}
 	public void connect(InetAddress serverAddress, int port) throws IOException
 	{
-		try
-		{
-			clientSocket = new Socket(serverAddress, port);
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		clientSocket = new Socket(serverAddress, port);
 	}
 	
 	/**
@@ -138,8 +122,10 @@ public class RadioClientTCP extends RadioClient
 							af.getBigEndian()
 						));
 						player.start();
-						ui.setSong(af.getTitle()+" ("+af.getDuration()+")");
-						ui.log("Next song: "+af.getTitle());
+						
+						if(ui == null)
+							ui.setSong(af.getTitle()+" ("+af.getDuration()+")");
+						log("Next song: "+af.getTitle());
 					}
 					
 					for(RadioPaket.TextMessage message: paket.getMessageList())
@@ -152,9 +138,9 @@ public class RadioClientTCP extends RadioClient
 						data = paket.getMusicData().toByteArray();
 						
 						if(data == null)
-							ui.log("keine Daten!");
+							log("keine Daten!");
 						if(player == null)
-							ui.log("Kein Player!");
+							log("Kein Player!");
 						
 						if(data != null && player != null)
 						{
@@ -165,11 +151,11 @@ public class RadioClientTCP extends RadioClient
 			}
 			catch(IOException e)
 			{
-				ui.log("Lost connection to server");
+				log("Lost connection to server");
 				this.closeSocket();
 			}
 		}
-		ui.log("Client stopped");
+		log("Client stopped");
 	}
 	
 	public boolean isClosed()
@@ -182,14 +168,14 @@ public class RadioClientTCP extends RadioClient
 	 */
 	public void close()
 	{
-		ui.log("Client closing");
+		log("Client closing");
 		this.closeSocket();
 		this.stop = true;
 	}
 	
 	protected void closeSocket()
 	{
-		ui.log("Closing socket");
+		log("Closing socket");
 		try
 		{
 			if(clientSocket != null)
@@ -203,7 +189,6 @@ public class RadioClientTCP extends RadioClient
 			e.printStackTrace();
 		}
 	}
-	
 	
 	public void sendChatMessage(TextMessage message) throws IOException
 	{
@@ -225,5 +210,17 @@ public class RadioClientTCP extends RadioClient
 	public void sendChatMessage(String text) throws IOException
 	{
 		sendChatMessage(new TextMessage(ui.getUserName(), text));
+	}
+	
+	private void log(String text)
+	{
+		if(ui == null)
+		{
+			ui.log(text);
+		}
+		else
+		{
+			Log.notice(text);
+		}
 	}
 }
