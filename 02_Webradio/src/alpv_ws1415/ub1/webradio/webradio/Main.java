@@ -80,7 +80,10 @@ public class Main
 				{
 					try
 					{
-						RadioClientTCP client = new RadioClientTCP();
+						ClientGUI gui = new ClientGUI();
+						RadioClientTCP client = new RadioClientTCP(gui);
+						gui.setContext(client);
+						
 						Thread rc = new Thread(client);
 						rc.start();
 						Log.log("Main: Starting Thread RadioClient ("+rc.getName()+")");

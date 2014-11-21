@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import javax.swing.*;
-import javax.swing.event.*;
 
 import alpv_ws1415.ub1.webradio.ui.ClientUI;
 import alpv_ws1415.ub1.webradio.webradio.server.TextMessage;
@@ -30,7 +29,7 @@ public class ClientGUI extends JFrame implements ClientUI
 	String username;
 	InetSocketAddress address;
 	
-	public ClientGUI(RadioClient context)
+	public ClientGUI()
 	{
 		// Frame-Initialisierung
 		super("Webradio Client");
@@ -43,7 +42,13 @@ public class ClientGUI extends JFrame implements ClientUI
 			}
 		});
 		
-		this.context = context;
+		
+	}
+	
+	public ClientGUI(RadioClient context)
+	{
+		this();
+		setContext(context);
 	}
 	
 	public void run()
@@ -177,6 +182,11 @@ public class ClientGUI extends JFrame implements ClientUI
 	public String getUserName()
 	{
 		return username;
+	}
+	
+	public void setContext(RadioClient context)
+	{
+		this.context = context;
 	}
 	
 	public void close()
