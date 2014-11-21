@@ -145,7 +145,14 @@ public class ClientGUI extends JFrame implements ClientUI
 		
 		if(context.isClosed())
 		{
-			makeConnection();
+			try
+			{
+				context.connect(address);
+			}
+			catch(IOException e)
+			{
+				addTextToChatArea("Netzwerkfehler!");
+			}
 		}
 	}
 
