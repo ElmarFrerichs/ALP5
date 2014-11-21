@@ -2,17 +2,24 @@ package alpv_ws1415.ub1.webradio.webradio.client;
 
 import java.io.*;
 import java.net.*;
+
 import javax.sound.sampled.*;
 
 import alpv_ws1415.ub1.webradio.audioplayer.*;
 import alpv_ws1415.ub1.webradio.communication.Client;
+import alpv_ws1415.ub1.webradio.ui.ClientUI;
 import alpv_ws1415.ub1.webradio.ui.Log;
+import alpv_ws1415.ub1.webradio.webradio.server.TextMessage;
+import alpv_ws1415.ub1.webradio.protobuf.RadioPaketProtos.*;
+
 
 
 public class RadioClientTCP extends RadioClient
 {
 	// Private data
 	private Socket clientSocket = null;
+	
+	private ClientUI ui;
 	
 	private int messageId = 0;
 	private int messageId() { return messageId++; }
@@ -23,9 +30,9 @@ public class RadioClientTCP extends RadioClient
 	/**
 	 * Constructor
 	 */
-	public RadioClientTCP()
+	public RadioClientTCP(ClientUI ui)
 	{
-		
+		this.ui = ui;
 	}
 	
 	/**
@@ -33,8 +40,9 @@ public class RadioClientTCP extends RadioClient
 	 * 
 	 * @param socketAddress	directly connect to address (like calling connect() afterwards)
 	 */
-	public RadioClientTCP(InetSocketAddress socketAddress) throws IOException
+	public RadioClientTCP(ClientUI ui, InetSocketAddress socketAddress) throws IOException
 	{
+		this(ui);
 		this.connect(socketAddress);
 	}
 	
@@ -44,8 +52,9 @@ public class RadioClientTCP extends RadioClient
 	 * @param address	directly connect to address (like calling connect() afterwards)
 	 * @param port		specify which port to use
 	 */
-	public RadioClientTCP(InetAddress address, int port) throws IOException
+	public RadioClientTCP(ClientUI ui, InetAddress address, int port) throws IOException
 	{
+		this(ui);
 		this.connect(address, port);
 	}
 	
@@ -84,31 +93,9 @@ public class RadioClientTCP extends RadioClient
 	 * @param dis	Input stream where to grab data from
 	 * @return		Return buffer containing the data
 	 */
-	private byte[] readPacket()
-	{
-		int bufferSize = 4096;
-		byte[] data = new byte[4096];
-		
-		try
-		{
-			InputStream str = clientSocket.getInputStream();
-			
-			str.read(data, 0, bufferSize);
-			
-			return data;
-		}
-		catch (Exception e)
-		{
-			Log.error("Lost connection to server");
-			this.closeSocket();
-			return null;
-		}
-		
-	}
-	
 	public void run ()
 	{
-		byte[] data;
+		byte[] data = new byte[4096];
 		
 		while(!stop)
 		{
@@ -128,21 +115,45 @@ public class RadioClientTCP extends RadioClient
 			
 			try
 			{
-				// hier wird geschummelt, weil die Datei in Reichweite ist
-				// TODO hier kommt Protobuf hin
-				File testFile = new File("test.wav");
-				AudioFileFormat aff = AudioSystem.getAudioFileFormat(testFile);
-				AudioPlayer player = new AudioPlayer(aff.getFormat());
+				InputStream str = clientSocket.getInputStream();
 				
-				player.start();
+				
+				AudioPlayer player = null;
 				
 				// While connection is still available, receive data from server
 				while(clientSocket != null)
 				{
-					data = readPacket();
-					if(data != null)
+					RadioPaket paket = RadioPaket.parseFrom(str);
+					
+					if(paket.hasFormat())
 					{
-						player.writeBytes(data);
+						RadioPaket.AudioFormat af = paket.getFormat();
+						
+						player = new AudioPlayer(new AudioFormat(
+							new AudioFormat.Encoding(af.getEncoding()),
+							af.getSampleRate(),
+							af.getSampleSizeInBits(),
+							af.getChannels(),
+							af.getFrameSize(),
+							af.getFrameRate(),
+							af.getBigEndian()
+						));
+						player.start();
+					}
+					
+					for(RadioPaket.TextMessage message: paket.getMessageList())
+					{
+						ui.pushChatMessage(message.getUser() + ": " + message.getMessage());
+					}
+					
+					if(paket.hasMusicData())
+					{
+						paket.getMusicData().copyTo(data, 0);
+						
+						if(data != null && player != null)
+						{
+							player.writeBytes(data);
+						}
 					}
 				}
 			}
@@ -155,6 +166,10 @@ public class RadioClientTCP extends RadioClient
 		Log.log("Client stopped");
 	}
 	
+	public boolean isClosed()
+	{
+		return (clientSocket == null);
+	}
 	
 	/**
 	 * Close socket
@@ -181,9 +196,25 @@ public class RadioClientTCP extends RadioClient
 	}
 	
 	
-	public void sendChatMessage(String message) throws IOException
+	public void sendChatMessage(TextMessage message) throws IOException
 	{
+		if(clientSocket == null)
+		{
+			throw new IOException("No Socket");
+		}
 		
+		RadioAntwortPaket.Builder paket = RadioAntwortPaket.newBuilder()
+			.setId(messageId());
+		
+		paket.setMessage(RadioAntwortPaket.TextMessage.newBuilder()
+			.setUser(message.getUsername())
+			.setMessage(message.getText()));
+		
+		paket.build().writeTo(clientSocket.getOutputStream());
 	}
 	
+	public void sendChatMessage(String text)
+	{
+		// Wegen Compilerfehler
+	}
 }

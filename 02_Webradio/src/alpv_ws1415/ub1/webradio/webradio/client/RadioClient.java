@@ -1,6 +1,9 @@
 package alpv_ws1415.ub1.webradio.webradio.client;
 
+import java.io.IOException;
+
 import alpv_ws1415.ub1.webradio.communication.Client;
+import alpv_ws1415.ub1.webradio.webradio.server.TextMessage;
 
 
 public abstract class RadioClient implements Client, Runnable
@@ -17,6 +20,8 @@ public abstract class RadioClient implements Client, Runnable
 		this.stop = true;
 	}
 	
-	protected abstract void closeSocket();
+	public abstract void sendChatMessage(TextMessage message) throws IOException;
 	
+	protected abstract void closeSocket();
+	public abstract boolean isClosed();
 }
