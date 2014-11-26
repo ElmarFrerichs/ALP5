@@ -3,14 +3,15 @@ package rpc.server;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.List;
 
 import rpc.RPCException;
 import rpc.RPCSecrets;
 import rpc.RPCServiceProvider;
-import rpc.protobuf.RPCProtocol;
 import rpc.protobuf.RPCProtocol.RPCCall;
 import rpc.protobuf.RPCProtocol.RPCResult;
 
@@ -30,6 +31,8 @@ public class RPCServerServiceProvider
 	private RPCServiceProvider serviceProvider;
 	private int port;
 	
+	private DatagramSocket socket;
+	
 	/**
 	 * @param serviceProvider der RPC-Service, der genutz werden soll, um die Methode aufzurufen.
 	 * @param port Port, auf dem der Server den RPC Service anbietet
@@ -43,13 +46,13 @@ public class RPCServerServiceProvider
 	@Override
 	public void run()
 	{
-		try
+		while(!stop)
 		{
-			byte[] b;
-			DatagramSocket socket = new DatagramSocket(port);
-			
-			while(!stop)
+			try
 			{
+				byte[] b;
+				socket = new DatagramSocket(port);
+				
 				b = new byte[1024];
 				DatagramPacket recievePackage = new DatagramPacket(b, b.length);
 				socket.receive(recievePackage);
@@ -62,43 +65,47 @@ public class RPCServerServiceProvider
 				
 				try
 				{
-					serviceProvider.callsave(call.getClassname(), call.getMethodname(), RPCSecrets.deserialize(call.getParametersList()));
+					Serializable[] params = (Serializable[]) RPCSecrets.deserialize(call.getParametersList());
+					
+					result = RPCSecrets.serialize(serviceProvider.callexplicit(call.getClassname(), call.getMethodname(), params));
 				}
 				catch(RPCException e)
 				{
+					e.printStackTrace();
 					result = RPCSecrets.serialize(e);
 					isException = true;
 				}
 				catch(ClassNotFoundException e)
 				{
+					e.printStackTrace();
 					result = RPCSecrets.serialize(e);
 					isException = true;
 				}
 				
-				RPCProtocol.RPCResult.Builder r = RPCResult.newBuilder();
+				RPCResult.Builder response = RPCResult.newBuilder();
 				
 				if(isException)
 				{
-					r.setException(result);
+					response.setException(result);
 				}
 				else
 				{
-					r.setResult(result);
+					response.setResult(result);
 				}
 				
 				ByteArrayOutputStream stream = new ByteArrayOutputStream(1024);
-				r.build().writeDelimitedTo(stream);
+				response.build().writeDelimitedTo(stream);
 				
 				b = stream.toByteArray();
 				DatagramPacket sendPackage = new DatagramPacket(b, b.length, recievePackage.getAddress(), recievePackage.getPort());
 				socket.send(sendPackage);
+				
+				socket.close();
 			}
-			
-			socket.close();
-		}
-		catch(IOException e)
-		{
-			return;
+			catch(IOException e)
+			{
+				return;
+			}
 		}
 	}
 
@@ -108,6 +115,7 @@ public class RPCServerServiceProvider
 	public void terminate()
 	{
 		stop = true;
+		socket.close();
 	}
 
 }
