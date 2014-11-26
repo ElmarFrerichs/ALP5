@@ -24,7 +24,10 @@ public class RPCLocalServiceProvider
 		extends
 			RPCServiceProvider
 {
-	public RPCLocalServiceProvider() {
+	private boolean callPrimitivesIfBoxed; 
+	
+	public RPCLocalServiceProvider()
+	{
 		this(true);
 	}
 	
@@ -35,7 +38,11 @@ public class RPCLocalServiceProvider
 	 * 
 	 * @param callPrimitivesIfBoxed
 	 */
-	public RPCLocalServiceProvider(boolean callPrimitivesIfBoxed) {
+	public RPCLocalServiceProvider(boolean callPrimitivesIfBoxed)
+	{
+		this.callPrimitivesIfBoxed = callPrimitivesIfBoxed;
+		
+		
 	}
 
 	/**
@@ -53,9 +60,41 @@ public class RPCLocalServiceProvider
 	 * @throws RPCException wird geworfen, falls waernd des Aufrufes ein Versagen auftritt (
 	 * die Methode kann nicht gefunden werden, die Klasse kann nicht gefunden werden, die Methode wirft eine Exception)
 	 */
-	public <R> R callexplicit(String classname, String methodname, Serializable[] params) throws RPCException {
-		// TODO
-		return null;
+	public <R> R callexplicit(String classname, String methodname, Serializable[] params) throws RPCException
+	{
+		try
+		{
+			Class<?> c = Class.forName(classname);
+			
+			Class<?>[] paramClasses = new Class<?>[params.length];
+			for(int i=0; i<params.length; i++)
+			{
+				if(!callPrimitivesIfBoxed)
+				{
+					paramClasses[i] = params[i].getClass();
+				}
+				else
+				{
+					paramClasses[i] = RPCSecrets.warpToPrimitiveClass(params[i].getClass());
+				}
+			}
+			
+			Method m = c.getMethod(methodname, paramClasses);
+			
+			return (R) m.invoke(null, params);
+		}
+		catch(ClassNotFoundException e)
+		{
+			throw new RPCException(e);
+		}
+		catch(NoSuchMethodException e)
+		{
+			throw new RPCException(e);
+		}
+		catch(Exception e)
+		{
+			throw new RPCException(e);
+		}
 	}
 
 }
